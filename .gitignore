@@ -1,0 +1,16 @@
+# Secrets: rclone remotes and tokens must never be committed
+rclone.conf
+*.conf.bak
+*.token
+client_secret*.json
+
+# Logs and runtime state
+*.log
+*.log.1
+*.jsonl
+*.state.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
