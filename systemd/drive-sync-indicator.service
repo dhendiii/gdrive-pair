@@ -1,0 +1,13 @@
+[Unit]
+Description=Drive Sync tray indicator
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/drive-sync-indicator
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=graphical-session.target

@@ -1,0 +1,12 @@
+[Unit]
+Description=Drive Sync: first sync of %i
+
+# Started by Drive Sync's "Add pair" wizard. On success the script enables
+# rclone-bisync@%i.timer and rclone-watch@%i.service itself, so this works
+# even if the app is closed while it runs.
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/rclone-sync.sh %i --resync --enable-units
+Nice=10
+IOSchedulingClass=idle
+TimeoutStartSec=infinity

@@ -1,0 +1,11 @@
+[Unit]
+Description=Drive Sync: watch local folder of %i
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/rclone-watch.sh %i
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=default.target

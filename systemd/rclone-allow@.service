@@ -1,0 +1,9 @@
+[Unit]
+Description=Drive Sync: approved sync of %i with delete limit lifted
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/rclone-sync.sh %i --allow-deletes
+Nice=10
+IOSchedulingClass=idle
+TimeoutStartSec=2h
