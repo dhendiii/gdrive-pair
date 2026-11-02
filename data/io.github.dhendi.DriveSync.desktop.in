@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Drive Sync
+Comment=Keep Google Drive folders in sync with this computer
+Exec=@BIN_DIR@/drive-sync
+Icon=io.github.dhendi.DriveSync
+Terminal=false
+Categories=Utility;Network;FileTransfer;
+Keywords=google;drive;rclone;sync;backup;cloud;
+StartupNotify=true
+X-GNOME-UsesNotifications=true
