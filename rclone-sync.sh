@@ -134,7 +134,7 @@ mkdir -p "$WORKDIR" || die "cannot create $WORKDIR"
 # something is wrong (unmounted disk, typo); creating it empty would make
 # bisync think every file was deleted locally.
 if [[ ! -d "$LOCAL" ]]; then
-    (( RESYNC )) || die "local folder missing: $LOCAL"
+    (( RESYNC )) || die "The local folder $LOCAL is missing (deleted or moved?). Nothing was changed. Restore it (check Trash), or remove the pair"
     mkdir -p "$LOCAL" || die "cannot create $LOCAL"
 fi
 
@@ -306,8 +306,22 @@ elif grep -qiE 'cannot find prior|must run --resync' <<< "$this_run"; then
     record fail "$reason"
     notify_failure "Drive Sync: $NAME failed" "$reason."
     echo "Hint: run $0 $NAME --resync --dry-run, then --resync" >&2
+elif grep -qE 'Empty current Path1 listing' <<< "$this_run"; then
+    reason="The Drive folder is empty (moved to Trash?). Nothing was changed. Restore it on Drive, or remove the pair"
+    record fail "$reason"
+    notify_failure "Drive Sync: $NAME stopped" "$reason."
+elif grep -qE 'Empty current Path2 listing' <<< "$this_run"; then
+    reason="The local folder is empty. Nothing was changed. Restore the files (check Trash), or remove the pair"
+    record fail "$reason"
+    notify_failure "Drive Sync: $NAME stopped" "$reason."
+elif grep -qiE 'directory not found|notFound|File not found' <<< "$this_run"; then
+    # The local folder is checked before rclone runs, so this is the Drive side.
+    reason="The Drive folder was not found (deleted, or access removed). Nothing was changed"
+    record fail "$reason"
+    notify_failure "Drive Sync: $NAME stopped" "$reason."
 else
-    reason=$(grep -E ' ERROR : ' <<< "$this_run" | tail -n 1 | sed -E 's/^.* ERROR : //')
+    # The first error is the cause; later ones are follow-ups like "Bisync aborted".
+    reason=$(grep -E ' ERROR : ' <<< "$this_run" | grep -v 'Bisync aborted' | head -n 1 | sed -E 's/^.* ERROR : //')
     reason="${reason:-rclone exited with code $rc}"
     record fail "$reason"
     notify_failure "Drive Sync: $NAME failed" "$reason"
