@@ -481,17 +481,103 @@ def start_first_sync(pair: Pair) -> None:
     _check(systemctl("start", "--no-block", pair.unit("resync")), "Starting first sync")
 
 
-def list_deletes(pair: Pair) -> list[tuple[str, str]]:
-    """Files a sync would delete, as (side, path); side is 'local' or 'drive'.
+@dataclass
+class Entry:
+    """One line of a bisync listing file."""
+    is_dir: bool
+    size: int
+    hash: str      # e.g. "md5:abc…" on Drive, "-" when unknown (local)
+    modtime: str
+
+
+_LISTING_RE = re.compile(r'^(\S)\s+(-?\d+)\s+(\S+)\s+\S+\s+(\S+)\s+"(.*)"$')
+
+
+def _read_listing(path: Path | None) -> dict[str, Entry]:
+    entries: dict[str, Entry] = {}
+    if path is None:
+        return entries
+    try:
+        lines = path.read_text(errors="replace").splitlines()
+    except OSError:
+        return entries
+    for line in lines:
+        m = _LISTING_RE.match(line)
+        if not m:
+            continue
+        typ, size, hsh, modtime, name = m.groups()
+        try:
+            name = json.loads(f'"{name}"')   # rclone quotes paths Go-style
+        except json.JSONDecodeError:
+            pass
+        entries[name] = Entry(is_dir=typ == "d", size=int(size), hash=hsh, modtime=modtime)
+    return entries
+
+
+def _listing(pair: Pair, side: str, suffix: str) -> Path | None:
+    n = "1" if side == "drive" else "2"
+    files = sorted(pair.workdir.glob(f"*.path{n}.lst{suffix}"), key=lambda p: p.stat().st_mtime)
+    return files[-1] if files else None
+
+
+def _same_file(old: Entry, new: Entry, old_path: str, new_path: str) -> bool:
+    """Is `new` the same file as `old`, just moved or renamed?"""
+    if old.is_dir or new.is_dir or old.size != new.size:
+        return False
+    if old.hash != "-" and new.hash != "-":
+        return old.hash == new.hash                       # content hash: allows renames
+    return (Path(old_path).name == Path(new_path).name    # no hash (local side): need same
+            and old.modtime == new.modtime)               # name and modification time
+
+
+@dataclass
+class ReviewItem:
+    kind: str                  # "move" or "delete"
+    side: str                  # where it will be applied: "local" or "drive"
+    path: str                  # current path on that side
+    new_path: str | None = None
+
+
+def review_changes(pair: Pair) -> list[ReviewItem]:
+    """What an approved sync would do with the files that vanished on one side.
+
+    A vanished file that reappears elsewhere on the same side with the same
+    content is reported as a move; everything else as a real deletion.
     Slow: runs a dry-run sync. Call from a worker thread."""
     r = run([str(SYNC_SCRIPT), pair.name, "--list-deletes"], timeout=900)
     if r.returncode != 0:
-        raise ActionError("Could not list deletions:\n" + (r.stderr.strip() or r.stdout.strip()))
-    items = []
+        raise ActionError("Could not check the changes:\n" + (r.stderr.strip() or r.stdout.strip()))
+    deleted: dict[str, list[str]] = {"drive": [], "local": []}
+    new: dict[str, list[str]] = {"drive": [], "local": []}
     for line in r.stdout.splitlines():
-        side, _, path = line.partition("\t")
-        if side in ("local", "drive") and path:
-            items.append((side, path))
+        parts = line.split("\t", 2)
+        if len(parts) != 3 or parts[1] not in deleted or not parts[2]:
+            continue
+        change, side, path = parts
+        if change == "del":
+            deleted[side].append(path)
+        elif change == "new":
+            new[side].append(path)
+
+    items: list[ReviewItem] = []
+    for changed in ("drive", "local"):
+        applied = "local" if changed == "drive" else "drive"
+        before = _read_listing(_listing(pair, changed, ""))       # last synced state
+        after = _read_listing(_listing(pair, changed, "-dry"))    # state seen by the dry run
+        unused = [p for p in new[changed] if p in after and not after[p].is_dir]
+        for old_path in deleted[changed]:
+            old = before.get(old_path)
+            match = None
+            if old:
+                cands = [p for p in unused if _same_file(old, after[p], old_path, p)]
+                # Prefer a candidate with the same file name (a plain move).
+                cands.sort(key=lambda p: Path(p).name != Path(old_path).name)
+                match = cands[0] if cands else None
+            if match:
+                unused.remove(match)
+                items.append(ReviewItem("move", applied, old_path, match))
+            else:
+                items.append(ReviewItem("delete", applied, old_path))
     return items
 
 

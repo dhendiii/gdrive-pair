@@ -304,7 +304,7 @@ class ReviewDialog(Adw.Dialog):
     MAX_ROWS = 300
 
     def __init__(self, window: "MainWindow", pair: core.Pair):
-        super().__init__(title=f"Review Deletions: {pair.name}", content_width=560, content_height=600)
+        super().__init__(title=f"Review Changes: {pair.name}", content_width=560, content_height=600)
         self.window = window
         self.pair = pair
 
@@ -315,12 +315,12 @@ class ReviewDialog(Adw.Dialog):
         loading = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12,
                           valign=Gtk.Align.CENTER, halign=Gtk.Align.CENTER)
         loading.append(Adw.Spinner(width_request=32, height_request=32))
-        loading.append(Gtk.Label(label="Checking what the sync would delete…", css_classes=["dim-label"]))
+        loading.append(Gtk.Label(label="Checking what the sync would change…", css_classes=["dim-label"]))
         self.stack.add_named(loading, "loading")
         self.toolbar.set_content(self.stack)
         self.set_child(self.toolbar)
 
-        run_async(core.list_deletes, self._loaded, pair)
+        run_async(core.review_changes, self._loaded, pair)
 
     def _loaded(self, items, err):
         if err:
@@ -329,7 +329,7 @@ class ReviewDialog(Adw.Dialog):
             self.stack.set_visible_child_name("error")
             return
         if not items:
-            page = Adw.StatusPage(icon_name="emblem-ok-symbolic", title="Nothing to delete now",
+            page = Adw.StatusPage(icon_name="object-select-symbolic", title="Nothing to delete now",
                                   description="Things changed since the sync was blocked. A normal sync will do.")
             btn = Gtk.Button(label="Sync Now", halign=Gtk.Align.CENTER, css_classes=["suggested-action", "pill"])
             btn.connect("clicked", lambda *_: (self.window.do_action(core.sync_now, self.pair, "Sync started"),
@@ -339,17 +339,37 @@ class ReviewDialog(Adw.Dialog):
             self.stack.set_visible_child_name("empty")
             return
 
+        def pick(kind, side):
+            return [i for i in items if i.kind == kind and i.side == side]
+
+        moved_on_drive, moved_here = pick("move", "local"), pick("move", "drive")
+        del_on_drive, del_here = pick("delete", "drive"), pick("delete", "local")
+        deletes = del_on_drive + del_here
+
         page = Adw.PreferencesPage()
-        on_drive = [p for s, p in items if s == "drive"]
-        on_local = [p for s, p in items if s == "local"]
-        if on_drive:
-            page.add(self._group(f"Will be deleted on Google Drive ({len(on_drive)})",
+        if not deletes:
+            page.set_description("Nothing is lost: every file was moved or renamed, not deleted. "
+                                 "The sync repeats the moves on the other side.")
+        elif moved_on_drive or moved_here:
+            page.set_description("Some files were only moved. The ones under “Will be deleted” "
+                                 "were really removed.")
+
+        if moved_on_drive:
+            page.add(self._group(f"Moved on Google Drive ({len(moved_on_drive)})",
+                                 "The sync does the same here: it downloads each file at its new place "
+                                 "and removes the old copy.", moved_on_drive))
+        if moved_here:
+            page.add(self._group(f"Moved on this computer ({len(moved_here)})",
+                                 "The sync does the same on Google Drive: it uploads each file at its new "
+                                 "place and moves the old copy to Drive's Trash.", moved_here))
+        if del_on_drive:
+            page.add(self._group(f"Will be deleted on Google Drive ({len(del_on_drive)})",
                                  "You deleted these on this computer. On Drive they go to the Trash.",
-                                 on_drive))
-        if on_local:
-            page.add(self._group(f"Will be deleted from this computer ({len(on_local)})",
+                                 del_on_drive))
+        if del_here:
+            page.add(self._group(f"Will be deleted from this computer ({len(del_here)})",
                                  "These were deleted on Google Drive. Local deletion is permanent.",
-                                 on_local))
+                                 del_here))
         self.stack.add_named(page, "list")
         self.stack.set_visible_child_name("list")
 
@@ -357,18 +377,28 @@ class ReviewDialog(Adw.Dialog):
                       margin_start=12, margin_end=12)
         cancel = Gtk.Button(label="Cancel")
         cancel.connect("clicked", lambda *_: self.close())
-        allow = Gtk.Button(label="Allow This Once", css_classes=["destructive-action"])
+        if deletes:
+            allow = Gtk.Button(label="Allow This Once", css_classes=["destructive-action"])
+        else:
+            allow = Gtk.Button(label="Apply Moves", css_classes=["suggested-action"])
         allow.connect("clicked", lambda *_: self._allow())
         bar.append(cancel)
         bar.append(allow)
         self.toolbar.add_bottom_bar(bar)
 
-    def _group(self, title, description, paths):
+    def _group(self, title, description, items):
         g = Adw.PreferencesGroup(title=GLib.markup_escape_text(title), description=description)
-        for p in paths[:self.MAX_ROWS]:
-            g.add(Adw.ActionRow(title=GLib.markup_escape_text(p), title_lines=2))
-        if len(paths) > self.MAX_ROWS:
-            g.add(Adw.ActionRow(title=f"…and {len(paths) - self.MAX_ROWS} more", css_classes=["dim-label"]))
+        for item in items[:self.MAX_ROWS]:
+            if item.kind == "move":
+                row = Adw.ActionRow(title=GLib.markup_escape_text(item.new_path),
+                                    subtitle=GLib.markup_escape_text(f"from {item.path}"),
+                                    title_lines=2, subtitle_lines=2)
+                row.add_prefix(Gtk.Image(icon_name="go-next-symbolic"))
+            else:
+                row = Adw.ActionRow(title=GLib.markup_escape_text(item.path), title_lines=2)
+            g.add(row)
+        if len(items) > self.MAX_ROWS:
+            g.add(Adw.ActionRow(title=f"…and {len(items) - self.MAX_ROWS} more", css_classes=["dim-label"]))
         return g
 
     def _allow(self):

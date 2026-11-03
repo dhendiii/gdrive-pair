@@ -213,10 +213,13 @@ if (( LIST_DELETES )); then
     rclone "${args[@]}"
     rc=$?
     if (( rc == 0 )); then
-        # "- Path1 File was deleted - x" = deleted on Drive, so it will be
-        # removed locally; Path2 = deleted locally, will be removed on Drive.
-        sed -nE 's/.*- Path1 +File was deleted +- (.*)$/local\t\1/p;
-                 s/.*- Path2 +File was deleted +- (.*)$/drive\t\1/p' "$RUN_LOG"
+        # Output: "<change>\t<side>\t<path>", side = where the change happened
+        # (Path1 = drive, Path2 = local). A deletion on one side will be
+        # applied to the other. "new" lines let Drive Sync recognise moves.
+        sed -nE 's/.*- Path1 +File was deleted +- (.*)$/del\tdrive\t\1/p;
+                 s/.*- Path2 +File was deleted +- (.*)$/del\tlocal\t\1/p;
+                 s/.*- Path1 +File is new +- (.*)$/new\tdrive\t\1/p;
+                 s/.*- Path2 +File is new +- (.*)$/new\tlocal\t\1/p' "$RUN_LOG"
     else
         tail -n 20 "$RUN_LOG" >&2
     fi
@@ -233,6 +236,23 @@ rc=$?
 this_run=$(tail -c +"$((log_offset + 1))" "$LOG_FILE" 2>/dev/null)
 count() { grep -cE -- "$1" <<< "$this_run"; }
 
+# Count queued files only: bisync also queues folders. Folder paths come from
+# its own listings (current and previous), which hold one "d ..." line per dir.
+dir_list=$(cat "$WORKDIR"/*.path[12].lst "$WORKDIR"/*.path[12].lst-old 2>/dev/null \
+           | sed -nE 's/^d .* "(.*)"$/\1/p' | sort -u)
+count_files() {  # count_files <regex before the path>
+    local p rel n=0
+    while IFS= read -r p; do
+        if [[ "$p" == "$LOCAL/"* ]]; then rel=${p#"$LOCAL/"}
+        elif [[ "$p" == "${REMOTE%/}/"* ]]; then rel=${p#"${REMOTE%/}/"}
+        elif [[ "$p" == *:/* ]]; then rel=${p#*:/}
+        else rel=$p
+        fi
+        grep -qxF -- "$rel" <<< "$dir_list" || n=$((n + 1))
+    done < <(sed -nE "s/.*$1 +- (.*)\$/\\1/p" <<< "$this_run")
+    echo "$n"
+}
+
 if (( DRY_RUN )); then
     (( rc == 0 )) && echo "$(ts) [OK] $NAME (dry run)" || echo "$(ts) [FAIL] $NAME rc=$rc (dry run)" >&2
     exit "$rc"
@@ -243,10 +263,10 @@ if (( rc == 0 )); then
         down=$(count ': Copied \(new\)$')
         up=0 del_local=0 del_drive=0
     else
-        up=$(count 'Queue copy to Path1')
-        down=$(count 'Queue copy to Path2')
-        del_drive=$(count '- Path1 +Queue delete')
-        del_local=$(count '- Path2 +Queue delete')
+        up=$(count_files 'Queue copy to Path1')
+        down=$(count_files 'Queue copy to Path2')
+        del_drive=$(count_files '- Path1 +Queue delete')
+        del_local=$(count_files '- Path2 +Queue delete')
     fi
     echo "$(ts) [OK] $NAME up=$up down=$down del_local=$del_local del_drive=$del_drive"
     record ok "" "$up" "$down" "$del_local" "$del_drive"
