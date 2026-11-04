@@ -200,5 +200,4 @@ bin/                              launchers
 systemd/                          unit files
 data/                             desktop entry, icons
 install.sh, uninstall.sh
-legacy/                           old scripts, kept until the old shared-impuls-id sync is retired
 ```
