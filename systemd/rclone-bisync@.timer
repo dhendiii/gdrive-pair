@@ -1,5 +1,5 @@
 [Unit]
-Description=Drive Sync: periodic sync of %i
+Description=Gdrive-Pair: periodic sync of %i
 
 [Timer]
 OnBootSec=2min

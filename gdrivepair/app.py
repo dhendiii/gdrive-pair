@@ -1,4 +1,4 @@
-"""Drive Sync main window (GTK4 + libadwaita)."""
+"""Gdrive-Pair main window (GTK4 + libadwaita)."""
 
 from __future__ import annotations
 
@@ -579,7 +579,7 @@ class AddPairDialog(Adw.Dialog):
         local = core.local_path_for(self.name)
         disk = core.disk_check(local, size)
         g = Adw.PreferencesGroup(description="The first sync downloads the whole folder. It runs in the "
-                                             "background, so you can close Drive Sync meanwhile.")
+                                             "background, so you can close Gdrive-Pair meanwhile.")
         for title, value in (("Files", f"{count:,}"), ("Download size", core.human_size(size)),
                              ("Free space", core.human_size(disk.free)),
                              ("Local folder", core.tilde(local)),
@@ -729,7 +729,7 @@ class MainWindow(Adw.ApplicationWindow):
         again = Gtk.Button(label="Check Again", halign=Gtk.Align.CENTER, css_classes=["pill"])
         again.connect("clicked", lambda *_: self.refresh(check_setup=True))
         box.append(again)
-        self.setup_page.set_description("Drive Sync needs a few things before it can work.")
+        self.setup_page.set_description("Gdrive-Pair needs a few things before it can work.")
         self.setup_page.set_child(box)
         self.main_stack.set_visible_child_name("setup")
 
@@ -758,7 +758,7 @@ class MainWindow(Adw.ApplicationWindow):
         AddPairDialog(self).present(self)
 
 
-class DriveSyncApp(Adw.Application):
+class GdrivePairApp(Adw.Application):
     def __init__(self):
         super().__init__(application_id=APP_ID, flags=Gio.ApplicationFlags.DEFAULT_FLAGS)
         self.window: MainWindow | None = None
@@ -790,4 +790,4 @@ class DriveSyncApp(Adw.Application):
 
 
 def main() -> int:
-    return DriveSyncApp().run(sys.argv)
+    return GdrivePairApp().run(sys.argv)

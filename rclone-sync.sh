@@ -25,14 +25,14 @@
 #
 # State written to ~/.local/state/rclone-sync/:
 #   <name>.log              rclone log (rotated at 10 MiB)
-#   <name>.history.jsonl    one JSON object per run (read by Drive Sync)
+#   <name>.history.jsonl    one JSON object per run (read by Gdrive-Pair)
 #   bisync/<name>/          bisync baseline listings
 #
 # Exit code: 0 ok, non-zero = failure (so systemd can see it).
 
 set -uo pipefail
 
-APP_ID="io.github.dhendi.DriveSync"
+APP_ID="io.github.dhendi.GdrivePair"
 CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/rclone-sync"
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/rclone-sync"
 FILTERS_FILE="$CONF_DIR/filters.txt"
@@ -47,7 +47,7 @@ KIND="sync"       # sync | first-sync | allow
 notify() {  # notify <urgency> <title> <body>
     command -v notify-send >/dev/null || return 0
     [[ -n "${DBUS_SESSION_BUS_ADDRESS:-}" || -S "${XDG_RUNTIME_DIR:-/nonexistent}/bus" ]] || return 0
-    notify-send -u "$1" -a "Drive Sync" -i "$APP_ID" \
+    notify-send -u "$1" -a "Gdrive-Pair" -i "$APP_ID" \
         -h "string:desktop-entry:$APP_ID" "$2" "$3" 2>/dev/null || true
 }
 
@@ -84,7 +84,7 @@ clear_failure() { (( RECORD )) && rm -f "$STATE_DIR/$NAME.last-failure"; return 
 die() {
     echo "ERROR: $*" >&2
     record fail "$*"
-    notify_failure "Drive Sync: ${NAME:-sync} failed" "$*"
+    notify_failure "Gdrive-Pair: ${NAME:-sync} failed" "$*"
     exit 1
 }
 
@@ -215,7 +215,7 @@ if (( LIST_DELETES )); then
     if (( rc == 0 )); then
         # Output: "<change>\t<side>\t<path>", side = where the change happened
         # (Path1 = drive, Path2 = local). A deletion on one side will be
-        # applied to the other. "new" lines let Drive Sync recognise moves.
+        # applied to the other. "new" lines let Gdrive-Pair recognise moves.
         sed -nE 's/.*- Path1 +File was deleted +- (.*)$/del\tdrive\t\1/p;
                  s/.*- Path2 +File was deleted +- (.*)$/del\tlocal\t\1/p;
                  s/.*- Path1 +File is new +- (.*)$/new\tdrive\t\1/p;
@@ -281,11 +281,11 @@ if (( rc == 0 )); then
     if (( RESYNC )); then
         if (( ENABLE_UNITS )); then
             systemctl --user enable --now "rclone-bisync@$NAME.timer" "rclone-watch@$NAME.service" \
-                || notify critical "Drive Sync: $NAME" "First sync done, but automatic sync could not be turned on."
+                || notify critical "Gdrive-Pair: $NAME" "First sync done, but automatic sync could not be turned on."
         fi
-        notify normal "Drive Sync: $NAME is ready" "First sync finished. ${summary:-No files to download.}"
+        notify normal "Gdrive-Pair: $NAME is ready" "First sync finished. ${summary:-No files to download.}"
     elif [[ -n "$summary" && "$NOTIFY_SYNC" != 0 ]]; then
-        notify low "Drive Sync: $NAME" "$summary"
+        notify low "Gdrive-Pair: $NAME" "$summary"
     fi
     exit 0
 fi
@@ -300,30 +300,30 @@ if abort=$(grep -oE 'too many deletes \(>[0-9]+%, [0-9]+ of [0-9]+\) on Path[12]
     if [[ "$abort" == *Path1 ]]; then side="locally"; else side="on Drive"; fi
     reason="Would delete $n of $total files $side"
     record blocked "$reason"
-    notify_failure "Drive Sync: $NAME blocked" "$reason. Open Drive Sync to review."
+    notify_failure "Gdrive-Pair: $NAME blocked" "$reason. Open Gdrive-Pair to review."
 elif grep -qiE 'cannot find prior|must run --resync' <<< "$this_run"; then
     reason="Sync baseline missing or filters changed; a new first sync is needed"
     record fail "$reason"
-    notify_failure "Drive Sync: $NAME failed" "$reason."
+    notify_failure "Gdrive-Pair: $NAME failed" "$reason."
     echo "Hint: run $0 $NAME --resync --dry-run, then --resync" >&2
 elif grep -qE 'Empty current Path1 listing' <<< "$this_run"; then
     reason="The Drive folder is empty (moved to Trash?). Nothing was changed. Restore it on Drive, or remove the pair"
     record fail "$reason"
-    notify_failure "Drive Sync: $NAME stopped" "$reason."
+    notify_failure "Gdrive-Pair: $NAME stopped" "$reason."
 elif grep -qE 'Empty current Path2 listing' <<< "$this_run"; then
     reason="The local folder is empty. Nothing was changed. Restore the files (check Trash), or remove the pair"
     record fail "$reason"
-    notify_failure "Drive Sync: $NAME stopped" "$reason."
+    notify_failure "Gdrive-Pair: $NAME stopped" "$reason."
 elif grep -qiE 'directory not found|notFound|File not found' <<< "$this_run"; then
     # The local folder is checked before rclone runs, so this is the Drive side.
     reason="The Drive folder was not found (deleted, or access removed). Nothing was changed"
     record fail "$reason"
-    notify_failure "Drive Sync: $NAME stopped" "$reason."
+    notify_failure "Gdrive-Pair: $NAME stopped" "$reason."
 else
     # The first error is the cause; later ones are follow-ups like "Bisync aborted".
     reason=$(grep -E ' ERROR : ' <<< "$this_run" | grep -v 'Bisync aborted' | head -n 1 | sed -E 's/^.* ERROR : //')
     reason="${reason:-rclone exited with code $rc}"
     record fail "$reason"
-    notify_failure "Drive Sync: $NAME failed" "$reason"
+    notify_failure "Gdrive-Pair: $NAME failed" "$reason"
 fi
 exit "$rc"

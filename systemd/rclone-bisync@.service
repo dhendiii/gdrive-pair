@@ -1,5 +1,5 @@
 [Unit]
-Description=Drive Sync: sync %i
+Description=Gdrive-Pair: sync %i
 
 [Service]
 Type=oneshot

@@ -1,0 +1,9 @@
+#!/usr/bin/env -S python3 -I
+"""Run the Gdrive-Pair tray indicator (started by gdrive-pair-indicator.service)."""
+import os
+import sys
+
+sys.path.insert(0, os.path.expanduser("~/.local/share/gdrive-pair"))
+from gdrivepair.indicator import main  # noqa: E402
+
+sys.exit(main())

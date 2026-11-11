@@ -1,5 +1,5 @@
 [Unit]
-Description=Drive Sync: watch local folder of %i
+Description=Gdrive-Pair: watch local folder of %i
 
 [Service]
 Type=simple

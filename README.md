@@ -1,11 +1,11 @@
-# Drive Sync: two-way Google Drive ↔ local folder sync
+# Gdrive-Pair: two-way Google Drive ↔ local folder sync
 
 Keeps local folders and Google Drive folders in sync, in both directions, using `rclone bisync`.
 Comes with a GNOME app and a tray icon, so day-to-day use needs no terminal.
 
-- **Drive Sync app**: list of synced folders, Sync now / Pause / Open folder, history and logs,
+- **Gdrive-Pair app**: list of synced folders, Sync now / Pause / Open folder, history and logs,
   an "Add pair" wizard, and a review screen when a big delete is blocked.
-- **Tray icon**: overall status, plus Sync all / Pause all / Open Drive Sync.
+- **Tray icon**: overall status, plus Sync all / Pause all / Open Gdrive-Pair.
 - **Engine**: `rclone-sync.sh` runs one sync for one pair (safety checks, locking);
   `rclone-watch.sh` syncs ~10 s after a local change; a systemd timer syncs every 5 min
   (this picks up changes made on Drive).
@@ -71,7 +71,7 @@ sync state or synced folders.
 
 ## 4. Add a folder
 
-Open **Drive Sync** and click **+**:
+Open **Gdrive-Pair** and click **+**:
 
 1. Pick the Google account (rclone remote).
 2. Paste the Drive folder link from your browser (or just the folder ID). The app checks it and shows what's inside.
@@ -169,7 +169,7 @@ Skipped: Google Docs/Sheets/Slides files (`--drive-skip-gdocs`) and shortcuts.
 | Sync baseline missing or filters changed | Run `rclone-sync.sh <name> --resync --dry-run`, check it, then `--resync`. |
 | `rateLimitExceeded` / 403 | You're probably on the shared client ID. Set your own (section 2). |
 | `invalid_grant` / token expired | The OAuth app is still in Testing mode. Publish it, then `rclone config reconnect <remote>:`. |
-| No tray icon | Enable the AppIndicator extension (section 1). Check `systemctl --user status drive-sync-indicator`. |
+| No tray icon | Enable the AppIndicator extension (section 1). Check `systemctl --user status gdrive-pair-indicator`. |
 | Watcher fails on big folders | Too few inotify watches: check `/proc/sys/fs/inotify/max_user_watches`, raise it in `/etc/sysctl.d/`. |
 | Files named `*.conflict1` | Both sides changed. Compare the two versions, keep one, delete the other. |
 
@@ -186,16 +186,16 @@ Optional filters, shared by all pairs, go in `~/.config/rclone-sync/filters.txt`
 | `~/.local/state/rclone-sync/<name>.log` | rclone log (rotated at 10 MiB) |
 | `~/.local/state/rclone-sync/<name>.history.jsonl` | One line per sync (shown in the app) |
 | `~/.local/state/rclone-sync/bisync/<name>/` | bisync baseline (don't edit) |
-| `~/.local/bin/` | `rclone-sync.sh`, `rclone-watch.sh`, `drive-sync`, `drive-sync-indicator` |
-| `~/.local/share/drive-sync/` | App code |
-| `~/.config/systemd/user/` | `rclone-bisync@`, `rclone-watch@`, `rclone-resync@`, `rclone-allow@`, `drive-sync-indicator` units |
+| `~/.local/bin/` | `rclone-sync.sh`, `rclone-watch.sh`, `gdrive-pair`, `gdrive-pair-indicator` |
+| `~/.local/share/gdrive-pair/` | App code |
+| `~/.config/systemd/user/` | `rclone-bisync@`, `rclone-watch@`, `rclone-resync@`, `rclone-allow@`, `gdrive-pair-indicator` units |
 | `~/.config/rclone/rclone.conf` | rclone remotes and tokens (secret) |
 
 ## Project layout
 
 ```
 rclone-sync.sh, rclone-watch.sh   sync engine
-drivesync/                        app (app.py), tray (indicator.py), shared logic (core.py)
+gdrivepair/                        app (app.py), tray (indicator.py), shared logic (core.py)
 bin/                              launchers
 systemd/                          unit files
 data/                             desktop entry, icons

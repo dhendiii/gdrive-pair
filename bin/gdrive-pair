@@ -1,0 +1,9 @@
+#!/usr/bin/env -S python3 -I
+"""Launch the Gdrive-Pair window."""
+import os
+import sys
+
+sys.path.insert(0, os.path.expanduser("~/.local/share/gdrive-pair"))
+from gdrivepair.app import main  # noqa: E402
+
+sys.exit(main())

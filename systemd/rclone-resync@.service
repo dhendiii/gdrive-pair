@@ -1,7 +1,7 @@
 [Unit]
-Description=Drive Sync: first sync of %i
+Description=Gdrive-Pair: first sync of %i
 
-# Started by Drive Sync's "Add pair" wizard. On success the script enables
+# Started by Gdrive-Pair's "Add pair" wizard. On success the script enables
 # rclone-bisync@%i.timer and rclone-watch@%i.service itself, so this works
 # even if the app is closed while it runs.
 [Service]

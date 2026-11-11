@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# uninstall.sh - remove Drive Sync for the current user.
+# uninstall.sh - remove Gdrive-Pair for the current user.
 #
 # Usage:
 #   ./uninstall.sh           remove the app, scripts and units. Pairs are paused
@@ -19,7 +19,7 @@ case "${1:-}" in
     *) echo "unknown option: $1" >&2; exit 1 ;;
 esac
 
-APP_ID="io.github.dhendi.DriveSync"
+APP_ID="io.github.dhendi.GdrivePair"
 BIN_DIR="$HOME/.local/bin"
 UNIT_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user"
 CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/rclone-sync"
@@ -35,7 +35,7 @@ if (( PURGE )); then
 fi
 
 echo "Stopping tray indicator and pausing all pairs"
-systemctl --user disable --now drive-sync-indicator.service 2>/dev/null || true
+systemctl --user disable --now gdrive-pair-indicator.service 2>/dev/null || true
 for conf in "$CONF_DIR"/*.conf; do
     [[ -e "$conf" ]] || continue
     name="$(basename "$conf" .conf)"
@@ -50,13 +50,13 @@ for conf in "$CONF_DIR"/*.conf; do
 done
 
 echo "Removing files"
-rm -f "$BIN_DIR"/{rclone-sync.sh,rclone-watch.sh,drive-sync,drive-sync-indicator}
-rm -rf "$HOME/.local/share/drive-sync"
-rm -f "$UNIT_DIR"/{rclone-bisync@.service,rclone-bisync@.timer,rclone-watch@.service,rclone-resync@.service,rclone-allow@.service,drive-sync-indicator.service}
+rm -f "$BIN_DIR"/{rclone-sync.sh,rclone-watch.sh,gdrive-pair,gdrive-pair-indicator}
+rm -rf "$HOME/.local/share/gdrive-pair"
+rm -f "$UNIT_DIR"/{rclone-bisync@.service,rclone-bisync@.timer,rclone-watch@.service,rclone-resync@.service,rclone-allow@.service,gdrive-pair-indicator.service}
 rm -f "$HOME/.local/share/applications/$APP_ID.desktop"
 rm -f "$HOME/.local/share/icons/hicolor/scalable/apps/$APP_ID.svg" \
       "$HOME/.local/share/icons/hicolor/symbolic/apps/$APP_ID-symbolic.svg" \
-      "$HOME"/.local/share/icons/hicolor/symbolic/apps/drive-sync-*-symbolic.svg
+      "$HOME"/.local/share/icons/hicolor/symbolic/apps/gdrive-pair-*-symbolic.svg
 systemctl --user daemon-reload
 systemctl --user reset-failed 2>/dev/null || true
 
@@ -66,4 +66,4 @@ if (( PURGE )); then
 else
     echo "Kept pair configs in $CONF_DIR and state in $STATE_DIR."
 fi
-echo "Drive Sync removed. Synced folders were not touched."
+echo "Gdrive-Pair removed. Synced folders were not touched."

@@ -1,9 +1,0 @@
-#!/usr/bin/env -S python3 -I
-"""Run the Drive Sync tray indicator (started by drive-sync-indicator.service)."""
-import os
-import sys
-
-sys.path.insert(0, os.path.expanduser("~/.local/share/drive-sync"))
-from drivesync.indicator import main  # noqa: E402
-
-sys.exit(main())

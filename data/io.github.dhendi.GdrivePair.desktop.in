@@ -1,9 +1,9 @@
 [Desktop Entry]
 Type=Application
-Name=Drive Sync
+Name=Gdrive-Pair
 Comment=Keep Google Drive folders in sync with this computer
-Exec=@BIN_DIR@/drive-sync
-Icon=io.github.dhendi.DriveSync
+Exec=@BIN_DIR@/gdrive-pair
+Icon=io.github.dhendi.GdrivePair
 Terminal=false
 Categories=Utility;Network;FileTransfer;
 Keywords=google;drive;rclone;sync;backup;cloud;

@@ -1,5 +1,5 @@
 [Unit]
-Description=Drive Sync: approved sync of %i with delete limit lifted
+Description=Gdrive-Pair: approved sync of %i with delete limit lifted
 
 [Service]
 Type=oneshot

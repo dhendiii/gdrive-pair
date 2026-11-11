@@ -1,4 +1,4 @@
-"""Core logic shared by the Drive Sync app and the tray indicator.
+"""Core logic shared by the Gdrive-Pair app and the tray indicator.
 
 The app never syncs anything itself. It reads state written by
 rclone-sync.sh and systemd, and controls the systemd user units:
@@ -724,7 +724,7 @@ def create_pair(name: str, remote_name: str, folder_id: str) -> Pair:
     CONF_DIR.mkdir(parents=True, exist_ok=True)
     conf = CONF_DIR / f"{name}.conf"
     conf.write_text(
-        "# Created by Drive Sync\n"
+        "# Created by Gdrive-Pair\n"
         f'REMOTE="{remote_path(remote_name, folder_id)}"\n'
         f'LOCAL="$HOME/Google Drive/{name}"\n'
         "NOTIFY_SYNC=1\n"
@@ -749,7 +749,7 @@ def setup_problems() -> list[SetupProblem]:
     problems = []
     if not shutil.which("rclone"):
         problems.append(SetupProblem("rclone is not installed",
-                                     "Drive Sync uses rclone to talk to Google Drive.",
+                                     "Gdrive-Pair uses rclone to talk to Google Drive.",
                                      "sudo pacman -S rclone"))
     if not shutil.which("inotifywait"):
         problems.append(SetupProblem("inotify-tools is not installed",
@@ -757,7 +757,7 @@ def setup_problems() -> list[SetupProblem]:
                                      "sudo pacman -S inotify-tools"))
     if not SYNC_SCRIPT.exists() or not (UNIT_DIR / "rclone-bisync@.service").exists():
         problems.append(SetupProblem("Sync scripts are not installed",
-                                     "Run the installer from the Drive Sync project folder.",
+                                     "Run the installer from the Gdrive-Pair project folder.",
                                      "./install.sh"))
     if shutil.which("rclone") and not list_drive_remotes():
         problems.append(SetupProblem("No Google Drive remote found",

@@ -1,11 +1,11 @@
 [Unit]
-Description=Drive Sync tray indicator
+Description=Gdrive-Pair tray indicator
 PartOf=graphical-session.target
 After=graphical-session.target
 
 [Service]
 Type=simple
-ExecStart=%h/.local/bin/drive-sync-indicator
+ExecStart=%h/.local/bin/gdrive-pair-indicator
 Restart=on-failure
 RestartSec=10
 

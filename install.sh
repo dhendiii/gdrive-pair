@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# install.sh - install Drive Sync for the current user.
+# install.sh - install Gdrive-Pair for the current user.
 #
 # Usage:
 #   ./install.sh          copy files into standard locations (normal use)
@@ -20,9 +20,9 @@ case "${1:-}" in
     *) echo "unknown option: $1" >&2; exit 1 ;;
 esac
 
-APP_ID="io.github.dhendi.DriveSync"
+APP_ID="io.github.dhendi.GdrivePair"
 BIN_DIR="$HOME/.local/bin"
-SHARE_DIR="$HOME/.local/share/drive-sync"
+SHARE_DIR="$HOME/.local/share/gdrive-pair"
 UNIT_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user"
 APPS_DIR="$HOME/.local/share/applications"
 ICON_DIR="$HOME/.local/share/icons/hicolor"
@@ -63,23 +63,37 @@ install_file() {
     fi
 }
 
+# ---- migrate from the old "Drive Sync" name ------------------------------------
+# Settings and logs live in ~/.config/rclone-sync and are untouched.
+OLD_ID="io.github.dhendi.DriveSync"
+if [[ -e "$BIN_DIR/drive-sync" || -d "$HOME/.local/share/drive-sync" ]]; then
+    say "Removing old Drive Sync install (renamed to Gdrive-Pair)"
+    systemctl --user disable --now drive-sync-indicator.service 2>/dev/null || true
+    rm -f "$BIN_DIR"/{drive-sync,drive-sync-indicator}
+    rm -rf "$HOME/.local/share/drive-sync"
+    rm -f "$UNIT_DIR/drive-sync-indicator.service" \
+          "$APPS_DIR/$OLD_ID.desktop" \
+          "$ICON_DIR"/*/apps/"$OLD_ID"*.{png,svg} \
+          "$ICON_DIR"/symbolic/apps/drive-sync-*-symbolic.svg
+fi
+
 # ---- files ----------------------------------------------------------------------
 say "Installing scripts to $BIN_DIR"
 for f in rclone-sync.sh rclone-watch.sh; do
     install_file "$SRC/$f" "$BIN_DIR/$f" 755
 done
-for f in drive-sync drive-sync-indicator; do
+for f in gdrive-pair gdrive-pair-indicator; do
     install_file "$SRC/bin/$f" "$BIN_DIR/$f" 755
 done
 
 say "Installing app to $SHARE_DIR"
 mkdir -p "$SHARE_DIR"
-rm -rf "$SHARE_DIR/drivesync"
+rm -rf "$SHARE_DIR/gdrivepair"
 if (( DEV )); then
-    ln -s "$SRC/drivesync" "$SHARE_DIR/drivesync"
+    ln -s "$SRC/gdrivepair" "$SHARE_DIR/gdrivepair"
 else
-    mkdir -p "$SHARE_DIR/drivesync"
-    install -m 644 "$SRC"/drivesync/*.py "$SHARE_DIR/drivesync/"
+    mkdir -p "$SHARE_DIR/gdrivepair"
+    install -m 644 "$SRC"/gdrivepair/*.py "$SHARE_DIR/gdrivepair/"
 fi
 
 say "Installing systemd units to $UNIT_DIR"
@@ -104,8 +118,8 @@ say "Reloading systemd"
 systemctl --user daemon-reload
 # Running watchers keep the old script loaded; restart only those already running.
 systemctl --user try-restart 'rclone-watch@*.service' 2>/dev/null || true
-systemctl --user enable drive-sync-indicator.service >/dev/null
-systemctl --user restart drive-sync-indicator.service || warn "tray indicator did not start (see: journalctl --user -u drive-sync-indicator)"
+systemctl --user enable gdrive-pair-indicator.service >/dev/null
+systemctl --user restart gdrive-pair-indicator.service || warn "tray indicator did not start (see: journalctl --user -u gdrive-pair-indicator)"
 
 # ---- post-install checks ------------------------------------------------------------
 if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
@@ -129,5 +143,5 @@ if ! rclone listremotes --long 2>/dev/null | grep -qE ':[[:space:]]+drive[[:spac
 fi
 
 echo
-say "Drive Sync installed$( (( DEV )) && echo ' (dev mode: linked to this folder)')."
-echo "Open it from the app menu, or run: drive-sync"
+say "Gdrive-Pair installed$( (( DEV )) && echo ' (dev mode: linked to this folder)')."
+echo "Open it from the app menu, or run: gdrive-pair"

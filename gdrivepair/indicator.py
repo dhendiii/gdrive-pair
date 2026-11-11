@@ -1,11 +1,11 @@
-"""Drive Sync tray indicator.
+"""Gdrive-Pair tray indicator.
 
 Implements a StatusNotifierItem with a com.canonical.dbusmenu menu directly
 over D-Bus (Gio), so it needs no GTK3/libappindicator. On GNOME the icon
 appears when the "AppIndicator and KStatusNotifierItem Support" extension is
 enabled. It also holds a logout inhibitor while a first sync is running.
 
-Runs as drive-sync-indicator.service (systemd user unit).
+Runs as gdrive-pair-indicator.service (systemd user unit).
 """
 
 from __future__ import annotations
@@ -119,10 +119,10 @@ ID_SEP1, ID_SEP2 = 10, 11
 ID_PAIR_BASE = 100
 
 ICONS = {
-    "ok": "drive-sync-ok-symbolic",
-    "syncing": "drive-sync-syncing-symbolic",
-    "paused": "drive-sync-paused-symbolic",
-    "error": "drive-sync-error-symbolic",
+    "ok": "gdrive-pair-ok-symbolic",
+    "syncing": "gdrive-pair-syncing-symbolic",
+    "paused": "gdrive-pair-paused-symbolic",
+    "error": "gdrive-pair-error-symbolic",
 }
 
 
@@ -179,7 +179,7 @@ class Indicator:
     def _sni_prop(self, _c, _s, _p, _i, prop):
         values = {
             "Category": GLib.Variant("s", "ApplicationStatus"),
-            "Id": GLib.Variant("s", "drive-sync"),
+            "Id": GLib.Variant("s", "gdrive-pair"),
             "Title": GLib.Variant("s", APP_NAME),
             "Status": GLib.Variant("s", "Active"),
             "WindowId": GLib.Variant("i", 0),
@@ -373,7 +373,7 @@ class Indicator:
                 return
         except GLib.Error:
             pass
-        subprocess.Popen([str(core.BIN_DIR / "drive-sync")], start_new_session=True)
+        subprocess.Popen([str(core.BIN_DIR / "gdrive-pair")], start_new_session=True)
 
 
 def main() -> int:
