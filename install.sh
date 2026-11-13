@@ -126,15 +126,18 @@ if [[ ":$PATH:" != *":$BIN_DIR:"* ]]; then
     warn "$BIN_DIR is not in your PATH. The app and units use full paths, so this only affects the terminal."
 fi
 if command -v gnome-extensions >/dev/null; then
-    if ! gnome-extensions list --enabled 2>/dev/null | grep -q '^ubuntu-appindicators@ubuntu.com$'; then
+    # The extension's ID differs by distro: Arch/Fedora use the first, Ubuntu the second.
+    ext_re='^(appindicatorsupport@rgcjonas\.gmail\.com|ubuntu-appindicators@ubuntu\.com)$'
+    if ! gnome-extensions list --enabled 2>/dev/null | grep -qE "$ext_re"; then
         warn "the tray icon needs the GNOME extension “AppIndicator and KStatusNotifierItem Support”."
-        if gnome-extensions list 2>/dev/null | grep -q '^ubuntu-appindicators@ubuntu.com$'; then
+        ext_id=$(gnome-extensions list 2>/dev/null | grep -E "$ext_re" | head -n1 || true)
+        if [[ -n "$ext_id" ]]; then
             echo "    It is installed but off. Turn it on with:"
-            echo "    gnome-extensions enable ubuntu-appindicators@ubuntu.com"
+            echo "    gnome-extensions enable $ext_id"
         else
             echo "    Install it with:  sudo pacman -S gnome-shell-extension-appindicator"
             echo "    then log out and back in, and run:"
-            echo "    gnome-extensions enable ubuntu-appindicators@ubuntu.com"
+            echo "    gnome-extensions enable appindicatorsupport@rgcjonas.gmail.com"
         fi
     fi
 fi

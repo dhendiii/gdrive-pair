@@ -26,7 +26,8 @@ For the tray icon on GNOME, also install and enable the AppIndicator extension:
 ```bash
 sudo pacman -S gnome-shell-extension-appindicator
 # log out and back in, then:
-gnome-extensions enable ubuntu-appindicators@ubuntu.com
+gnome-extensions enable appindicatorsupport@rgcjonas.gmail.com
+# (on Ubuntu the ID is ubuntu-appindicators@ubuntu.com)
 ```
 
 ## 2. Create an rclone remote with your own client ID
