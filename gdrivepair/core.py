@@ -23,6 +23,8 @@ from datetime import datetime
 from enum import Enum
 from pathlib import Path
 
+from . import GUIDE_URL
+
 HOME = Path.home()
 CONF_DIR = Path(os.environ.get("XDG_CONFIG_HOME", HOME / ".config")) / "rclone-sync"
 STATE_DIR = Path(os.environ.get("XDG_STATE_HOME", HOME / ".local/state")) / "rclone-sync"
@@ -761,7 +763,8 @@ def setup_problems() -> list[SetupProblem]:
                                      "./install.sh"))
     if shutil.which("rclone") and not list_drive_remotes():
         problems.append(SetupProblem("No Google Drive remote found",
-                                     "Create one with your own client ID (see README, section 2). "
+                                     "Create one with your own client ID (see README, section 2: "
+                                     f"{GUIDE_URL}). "
                                      "Choose storage type “drive”.",
                                      "rclone config"))
     return problems

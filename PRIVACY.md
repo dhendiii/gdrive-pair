@@ -1,6 +1,6 @@
 # Gdrive-Pair Privacy Policy
 
-_Last updated: 9 November 2026_
+_Last updated: 13 November 2026_
 
 Gdrive-Pair is a desktop app for Linux that keeps folders on your computer in sync
 with folders in your Google Drive. It runs entirely on your own computer and is
@@ -15,6 +15,10 @@ to your Google Drive. It uses that access only to:
 - download files from those folders to your computer,
 - upload, update, move and delete files in those folders so they match your
   local copy.
+
+Gdrive-Pair does not include a Google OAuth client of its own. You connect with an
+OAuth client that you create in your own Google Cloud project, so the developer has
+no access to your Google account, your access token or your Drive.
 
 Gdrive-Pair does not read your Google account profile, contacts, email or any
 other Google service.

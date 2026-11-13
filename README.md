@@ -34,6 +34,11 @@ gnome-extensions enable ubuntu-appindicators@ubuntu.com
 rclone's shared Google client ID is being retired during 2026, so use your own.
 One remote per Google account is enough; each synced folder is chosen separately.
 
+Gdrive-Pair does not ship a Google OAuth client and never sees your credentials.
+You create a client in your own Google Cloud project, so there is nothing to verify
+with Google. Google shows an "unverified app" warning when you log in to your own
+client; that is expected.
+
 1. Go to [Google Cloud Console](https://console.cloud.google.com/) and create a project.
 2. **APIs & Services → Library**: enable the **Google Drive API**.
 3. **OAuth consent screen**:

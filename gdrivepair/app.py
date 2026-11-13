@@ -15,7 +15,7 @@ gi.require_version("Adw", "1")
 gi.require_version("Gdk", "4.0")
 from gi.repository import Adw, Gdk, Gio, GLib, Gtk, Pango  # noqa: E402
 
-from . import APP_ID, APP_NAME, VERSION, core  # noqa: E402
+from . import APP_ID, APP_NAME, GUIDE_URL, VERSION, core  # noqa: E402
 from .core import State  # noqa: E402
 
 REFRESH_SECS = 2
@@ -426,7 +426,8 @@ class AddPairDialog(Adw.Dialog):
             page = self._page("Add Pair", Adw.StatusPage(
                 icon_name="dialog-warning-symbolic", title="No Google Drive remote",
                 description="Create one in a terminal with <tt>rclone config</tt> "
-                            "(storage type “drive”, your own client ID), then try again."))
+                            "(storage type “drive”, your own client ID), then try again. "
+                            f"Step-by-step guide: {GUIDE_URL}"))
             self.nav.add(page)
             return
         self.remotes = remotes
